@@ -2,8 +2,8 @@
 
 @section('content')
     <div class="row row-deck row-cards">
-        <div class="col-md-12">
-            <div id="map" style="height: 400px;"></div>
+        <div class="col-md-6">
+            <div id="map" class="ratio ratio-16x9"></div>
         </div>
     </div>
 @endsection
@@ -13,34 +13,42 @@
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
     <script>
-        // Inisialisasi map (akan diganti setelah dapat lokasi)
-        var map = L.map('map').setView([0, 0], 13);
+        // Inisialisasi peta dengan view default
+        var map = L.map('map').setView([0, 0], 2);
 
-        // Tambahkan tile dari OpenStreetMap
+        // Tambahkan tile layer (OpenStreetMap)
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        // Dapatkan lokasi dari browser
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(function(position) {
-                var lat = position.coords.latitude;
-                var lon = position.coords.longitude;
+        // Fungsi untuk menangani sukses mendapatkan lokasi
+        function onLocationFound(e) {
+            var radius = e.accuracy / 2;
 
-                // Update peta ke lokasi pengguna
-                map.setView([lat, lon], 15);
+            // Buat marker untuk lokasi pengguna
+            L.marker(e.latlng).addTo(map)
+                .bindPopup("Anda berada dalam " + radius.toFixed(2) + " meter dari titik ini").openPopup();
 
-                // Tambahkan marker
-                L.marker([lat, lon])
-                    .addTo(map)
-                    .bindPopup("Anda di sini 📍")
-                    .openPopup();
-            }, function(error) {
-                alert("Gagal mendapatkan lokasi: " + error.message);
-            });
-        } else {
-            alert("Geolocation tidak didukung di browser ini.");
+            // Buat circle untuk menunjukkan akurasi
+            L.circle(e.latlng, radius).addTo(map);
+
+            // Set view ke lokasi pengguna
+            map.setView(e.latlng, 15);
         }
+
+        // Fungsi untuk menangani error mendapatkan lokasi
+        function onLocationError(e) {
+            alert("Gagal mendapatkan lokasi Anda: " + e.message);
+        }
+
+        // Daftarkan event handlers
+        map.on('locationfound', onLocationFound);
+        map.on('locationerror', onLocationError);
+
+        // Coba dapatkan lokasi
+        map.locate({
+            setView: true,
+            maxZoom: 16
+        });
     </script>
 @endpush
-
